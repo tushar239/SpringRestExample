@@ -286,6 +286,60 @@ http://book.javanb.com/Professional-Java-Development-with-the-Spring-Framework/B
 read more about it on 
 http://book.javanb.com/Professional-Java-Development-with-the-Spring-Framework/BBL0102.html
 
+
+ContentNegotiatingViewResolver
+------------------------------
+You can define multiple View Resolvers in your applicaiton context.
+
+    @Bean
+    public VelocityConfigurer velocityConfig() {
+        final VelocityConfigurer configurer = new VelocityConfigurer();
+        configurer.setResourceLoaderPath("/WEB-INF/views/");
+        return configurer;
+    }
+
+    @Bean
+    public VelocityViewResolver viewResolver() {
+        final VelocityViewResolver resolver = new VelocityViewResolver();
+        resolver.setPrefix("");
+        resolver.setSuffix(".vm");
+        return resolver;
+    }
+
+    @Bean
+    public InternalResourceViewResolver internalResourceViewResolver() {
+        final InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+        resolver.setPrefix("/WEB-INF/views/");
+        resolver.setSuffix(".jsp");
+        return resolver;
+    }
+
+ContentNegotiatingViewResolver will iterate through all these view resolvers to figure out whether a view is available from any one of these View Resolvers.
+It is also one type of ViewResolver.
+
+see its "resolveViewName(String viewName, Locale locale)" method.
+Based on passed MediaType also, it can add the suffix to passed view name and resolve it using proper ViewResolver.
+e.g. If MediaType=text/html and viewName="something", then it knows that it needs resolve a viewName=something.html
+
+ResourceHandler
+---------------
+http://www.baeldung.com/spring-mvc-static-resources
+
+To access static resources like css, images etc easily in jsp file using <c:url....>, you can define ResourceHandler.
+
+@Configuration
+@EnableWebMvc
+public class MvcConfig extends WebMvcConfigurerAdapter {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry
+          .addResourceHandler("/resources/**")
+          .addResourceLocations("(/resources/");
+    }
+}
+Now in jsp, you don't have to use entire path of css file. You can just do as follows.
+<link href="<c:url value="/resources/myCss.css" />" rel="stylesheet">
+
 --------------------------------------------------------
 What is ModelMap, Model and ModelAttribute?
 They are all almost same.
