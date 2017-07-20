@@ -70,8 +70,10 @@ Configuring DispatcherServlet
 	It’s important to realize that configuring DispatcherServlet via Abstract- AnnotationConfigDispatcherServletInitializer is an alternative to the traditional web.xml file. It will only work when deploying to a server that supports Servlet 3.0, such as Apache Tomcat 7 or higher.
 
 	import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
 	public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
-	@Override
+
+	  @Override
 	  protected String[] getServletMappings() {
 		return new String[] { "/" };
 	  }
@@ -121,6 +123,20 @@ Configuring DispatcherServlet
 		})
 	public class RootConfig {
 	}
+
+
+	What is ViewController?
+
+        you can override addViewControllers method in WebConfig
+
+        @Override
+        public void addViewControllers(ViewControllerRegistry registry) {
+            registry.addViewController("/").setViewName("index");
+        }
+        It will just say that all requests made with path "/" goes to index.jsp (.jsp is added by ViewResolver)
+
+
+
 
 REST Operations
 ----------------
@@ -287,9 +303,9 @@ read more about it on
 http://book.javanb.com/Professional-Java-Development-with-the-Spring-Framework/BBL0102.html
 
 
-ContentNegotiatingViewResolver
-------------------------------
-You can define multiple View Resolvers in your applicaiton context.
+ViewResolvers
+-------------
+You can define multiple View Resolvers in your application context.
 
     @Bean
     public VelocityConfigurer velocityConfig() {
@@ -364,10 +380,12 @@ DispatcherServlet's doDispatch(...) figures out correct handler that can handle 
 This Handler is a type of HandlerExecutorChain(has HandlerMethod->...Controller.create...(...), handlerInterceptors etc)
 From Handler, it finds appropriate HandlerAdapter and calls its handle(...) method.
 e.g. if HandlerMethod has @RequestMapping, it will use RequestMappingHandlerAdapter.
-RequestMappingHandlerAdapter has many MethodArgumentResolvers. It uses appropriate Resolver as per the type or annotation of method arguement.
+RequestMappingHandlerAdapter has many MethodArgumentResolvers. It uses appropriate Resolver as per the type or annotation of method argument.
 For @RequestBody and @ResponseBody, it uses RequestResponseBodyMethodArgumentResolver.
 
-RequestResponseBodyMethodArgumentResolver uses appropriate MessageConverter to convert incoming value to a type expected by Method argument and request's Content-Type header value.
+Argument Resolver called RequestResponseBodyMethodProcessor uses appropriate MessageConverter to convert incoming value to a type expected by Method argument and request's Content-Type header value.
+Based on Content-Type header's value it chooses the correct MessageConverter and converts the body of http request to an Object using appropriate MessageConverter.
+
 There are many types of MethodArgumentResolvers like RequestResponseBodyMethodProcessor. It resolves an argument annotated with @RequestBody by calling the RequestBodyAdvice before and after writing the httpservletrequest body to and object using a MessageConverter.
 
 	resolveArgument(...) {
@@ -381,6 +399,22 @@ There are many types of MethodArgumentResolvers like RequestResponseBodyMethodPr
 	}
 
 Similarly, it uses MessageConverter to convert outgoing object to a type set by request's Accept header.
+It uses ContentNegotiationStrategy to extract the MediaType. There are multiple types of ContentNegotiationStrategies.
+    - HeaderContentNegotiationStrategy - looks for Accept header
+    - ParameterContentNegotiationStrategy - looks for query param 'format'
+    - PathExtensionContentNegotiationStrategy -???
+    - ServletPathExtensionContentNegotiationStrategy - uses ServletContext's MimeType to determine MediaType
+
+    e.g. if HeaderContentNegotiationStrategy finds out that there is an Accept Header with value application/json, then MappingJackson2HttpMessageConverter will be used to convert response object to json.
+
+    ContentNegotiation is nothing but how client would like to get the response back. Normally, in rest call, client sets Accept header.
+    It is always better to use both Content-Type and Accept headers for spring to better understand the client's request.
+    If not provided, then spring will use some MessageConverter. If you have both xtream dependency and jackson dependencies, then it will use MessageConverter suitable to convert the response either to xml or json.
+
+    https://www.youtube.com/watch?v=6yF0GpjAhwk
+    https://www.youtube.com/watch?v=UT8-4_3s_XA
+
+
 	handleReturnValue(...) {
 		writeWithMessageConverters(returnValue, returnType, webRequest);
 	}
