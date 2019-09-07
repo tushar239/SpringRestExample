@@ -9,8 +9,9 @@ Read MVC lifecycle
 	Typical application may have several controllers, and DispatcherServlet needs some help deciding which controller to send the request to. So the DispatcherServlet consults one or more handler mappings to figure out where the request’s next stop will be.
 
 	3) Controller-
-	Once an appropriate controller has been chosen, DispatcherServlet sends the request on its merry way to the chosen controller (Actually, a well-designed controller per- forms little or no processing itself and instead delegates responsibility for the business logic to one or more service objects.)
-	The logic performed by a controller often results in some information that needs to be carried back to the user and displayed in the browser. This information is referred to as the model.
+	Once an appropriate controller has been chosen, DispatcherServlet sends the request on its merry way to the chosen controller (Actually, a well-designed controller performs little or no processing itself and instead delegates responsibility for the business logic to one or more service objects.)
+	The logic performed by a controller often results in some information that needs to be carried back to the user and displayed in the browser.
+	This information is referred to as the MODEL.
 
 	4) Model and Logical View name returned by Controller to DispatcherServlet -
 	One of the last things a controller does is package up the model data and identify the name of a view that should render the output. It then sends the request, along with the model and view name, back to the DispatcherServlet
@@ -45,11 +46,32 @@ Safe and Idempotent methods
 	then it’s an industry standard that it is non-idempotent method.
 	If you are using PUT/PATCH, then it is understood by industry that it carries idempotent operation.
 
+	An idempotent HTTP method is a HTTP method that can be called many times without different outcomes.
+	It would not matter if the method is called only once, or ten times over. The result should be the same. Again, this only applies to the result, not the resource itself. This still can be manipulated (like an update-timestamp, provided this information is not shared in the (current) resource representation.
+
+    Consider the following examples:
+
+      a = 4;
+      a++;
+
+    The first example is idempotent: no matter how many times we execute this statement, a will always be 4. The second example is not idempotent. Executing this 10 times will result in a different outcome as when running 5 times. Since both examples are changing the value of a, both are non-safe methods.
+
+    Idempotency is important in building a fault-tolerant API.
+    Suppose a client wants to update a resource through POST. Since POST is not a idempotent method, calling it multiple times can result in wrong updates.
+    What would happen if you sent out the POST request to the server, but you get a timeout. Is the resource actually updated? Does the timeout happened during sending the request to the server, or the response to the client? Can we safely retry again, or do we need to figure out first what has happened with the resource?
+    By using idempotent methods, we do not have to answer this question, but we can safely resend the request until we actually get a response back from the server.
+
+Three important components for spring web mvc
+
+    @EnableWebMvc - it is equivalent to <mvc:annotation-driven /> in XML. It enables support for @Controller-annotated classes that use @RequestMapping to map incoming requests to a certain method.
+    WebMvcConfigurer - you can configure mvc related components like view resolvers etc.
+    WebApplicationInitializer/AbstractAnnotationConfigDispatcherServletInitializer - to create WebApplicationContext and to register DispatcherServlet.
+
 Configuring DispatcherServlet
 
-	WebApplicaitonInitializer
+	WebApplicationInitializer
 		|
-	AbstractContextLoaderInitailzer - registers ContextLoaderListener to ServletContext and creates Root WebApplicationContext from provided getRootConfigClasses()
+	AbstractContextLoaderInitializer - registers ContextLoaderListener to ServletContext and creates Root WebApplicationContext from provided getRootConfigClasses(). ContextLoaderListener creates WebApplicationContext.
 		|
 	AbstractDispatcherServletInitializer  - creates WebApplicationContext based on provided getServletConfigClasses() and creates DispatcherServlet by passing WebApplicationContext to. It also registers all Filters.
 	If you want to customize DispatcherServlet for some reason, you can override customizeRegistration(), you can apply additional configuration to DispatcherServlet.
@@ -58,7 +80,7 @@ Configuring DispatcherServlet
 		|
 	Your own custom class that can configure dispatcher servlet related mapping, config class etc
 
-	SpringServletContainerInitializer (implements ServletContainerInitializer) looks for all WebApplicationInializers in your
+	SpringServletContainerInitializer (implements ServletContainerInitializer) looks for all WebApplicationInitializers in your
 	context and calls them accordingly their order defined using @Order on top of WebApplicationInitializers,
 	AnnotationAwareOrderComparator.sort(initializers);
 
@@ -79,19 +101,21 @@ Configuring DispatcherServlet
 	  }
 	  @Override
 	  protected Class<?>[] getRootConfigClasses() {
-		return new Class<?>[] { RootConfig.class };
+		return new Class<?>[] { RootConfig.class }; ---- WebApplicationContext is created using these Configuration classes
 	  }
 	  @Override
 	  protected Class<?>[] getServletConfigClasses() {
-		return new Class<?>[] { WebConfig.class };
+		return new Class<?>[] { WebConfig.class }; --- AnnotationConfigWebApplicationContext is created using these Configuration classes
 	  }
 	}
-	It’s important to realize that configuring DispatcherServlet via Abstract- AnnotationConfigDispatcherServletInitializer is an alternative to the tradi- tional web.xml file.
+	It’s important to realize that configuring DispatcherServlet via Abstract- AnnotationConfigDispatcherServletInitializer is an alternative to the traditional web.xml file.
 	The only gotcha with configuring DispatcherServlet in this way, as opposed to in a web.xml file, is that it will only work when deploying to a server that supports Servlet 3.0, such as Apache Tomcat 7 or higher.
 
 	ENABLING SPRING MVC
 	Just as there are several ways of configuring DispatcherServlet, there’s more than one way to enable Spring MVC components. Historically, Spring has been configured using XML, and there’s an <mvc:annotation-driven> element that you can use to enable annotation-driven Spring MVC.
 	The very simplest Spring MVC configuration you can create is a class annotated with @EnableWebMvc:
+
+    @EnableWebMvc is equivalent to <mvc:annotation-driven /> in XML. It enables support for @Controller-annotated classes that use @RequestMapping to map incoming requests to a certain method.
 
 	@Configuration
 	@EnableWebMvc --- Enable Spring MVC
@@ -723,7 +747,7 @@ RequestMappingInfo encapsulates the following request mapping conditions:
 Unless a specific handler mapping is defined in your context, it will use default handler mapping.
 
 e.g. RequestMappingHandlerAdapter
-It actually calls controller's matched method. Before that it does a lot many things like resolving matched methods arguements
+It actually calls controller's matched method. Before that it does a lot many things like resolving matched methods arguments
 and after invoking a method, resolving return type of the method.
 
 It has

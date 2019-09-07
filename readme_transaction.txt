@@ -40,7 +40,7 @@ Read phenomena
         A dirty read (aka uncommitted dependency) occurs when a tx1 is allowed to read data from a row that has been modified by another running transaction (tx2) and not yet committed.
         No need to lock thr row where id=1. Simply, setting isolation_level=READ_COMMITTED will prevent tx1 from reading uncommited changes from tx2.
 
-    Non-repeatable reads -
+    Repeatable reads -
 
         Let's say you applied isolation_level=READ_COMMITTED, but what if before second read by TX1, TX2 commits the changes to a row.
         In this case, tx2 will read changed values, if it reads the row again.
