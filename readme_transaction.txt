@@ -1,5 +1,7 @@
 Transactions Related Problems
 -----------------------------
+Transaction example is inside SampleSpringBootDataJpaProject
+
 RDBMS provides ACID properties (atomicity, consistency, integrity, durability)
 Transaction management is required for Atomicity.
 
@@ -7,7 +9,7 @@ Transaction management is required for Atomicity.
 https://en.wikipedia.org/wiki/Isolation_(database_systems)
 
 Read only Transaction
-    If you say @Transactional(readonly=true) it means that it will jdbc's connection.setReadOnly(true). That transaction is allowed to do only reads and no writes.
+    If you say @Transactional(readonly=true) it means that it will be jdbc's connection.setReadOnly(true). That transaction is allowed to do only reads and no writes.
 
 Propagation Levels
 
@@ -53,7 +55,7 @@ Read phenomena
         Tx1 - SELECT * FROM users WHERE id = 1; --- This will read age=21
 
         To prevent this, you need to apply isolation_level=READ_REPEATABLE, which will lock the row with id=1 when TX1 reads it first time.
-        It won't release the lock until TX1 commits or rollbacks. This will prevent Tx2 to update the row. Tx2 has to wait until Tx1 is finished.
+        It won't release the lock until TX1 commits or rollbacks. This will prevent Tx2 to update/delete the row. Tx2 has to wait until Tx1 is finished.
 
     Phantom reads -
 
